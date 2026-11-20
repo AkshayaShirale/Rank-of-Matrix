@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Matrix Rank, Step by Step</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f3f5f7;--panel:#fff;--ink:#14212b;--mute:#5d6b76;--line:#c9d2d9;--acc:#0b6e8a;--accbg:#d6eef5;--accink:#fff;--amb:#b45f06;--ambbg:#fde7c4;--grn:#1b7a3d;--grnbg:#d9f1e0;--bad:#d33}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10181e;--panel:#18232b;--ink:#e6edf1;--mute:#93a3ae;--line:#33444f;--acc:#4cc2e0;--accbg:#12404d;--accink:#06222b;--amb:#f2a54a;--ambbg:#4a3512;--grn:#6fd48f;--grnbg:#16402a;--bad:#ff6b6b}}
+:root[data-theme="dark"]{--bg:#10181e;--panel:#18232b;--ink:#e6edf1;--mute:#93a3ae;--line:#33444f;--acc:#4cc2e0;--accbg:#12404d;--accink:#06222b;--amb:#f2a54a;--ambbg:#4a3512;--grn:#6fd48f;--grnbg:#16402a;--bad:#ff6b6b}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Segoe UI",system-ui,sans-serif}
+main{max-width:780px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:1.6rem;margin:0 0 4px}
+.sub{margin:0 0 20px;color:var(--mute)}
+section{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:16px}
+h2{font-size:1.05rem;margin:0 0 12px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+label{display:flex;flex-direction:column;font-size:.9rem;color:var(--mute);gap:4px}
+input[type=text],input[type=number]{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px}
+input:focus-visible,button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.dim{width:90px}
+button{font:inherit;font-weight:600;border:0;border-radius:6px;padding:9px 16px;background:var(--acc);color:var(--accink);cursor:pointer}
+button.sec{background:transparent;color:var(--ink);border:1px solid var(--line)}
+button:disabled{opacity:.4;cursor:default}
+.scroll{overflow-x:auto;padding:2px}
+#grid{border-collapse:separate;border-spacing:6px}
+#grid input{width:62px;text-align:center}
+#grid input.bad{border-color:var(--bad)}
+.err{color:var(--bad);min-height:1.3em;margin:8px 0 0;font-size:.9rem}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--mute);margin-bottom:12px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.mr{display:flex;align-items:center;gap:6px;margin:4px 0;padding:3px 6px;border-radius:8px;border:2px solid transparent;width:max-content;min-width:100%}
+.mr b{width:30px;font-size:.85rem;color:var(--mute)}
+.c{width:62px;text-align:center;font:600 1.05rem Consolas,Menlo,monospace;padding:6px 0;border-radius:6px;background:var(--bg)}
+.mr.pv{border-color:var(--acc);background:var(--accbg)}
+.mr.tg{border-color:var(--amb);background:var(--ambbg)}
+.mr.nz{background:var(--grnbg)} .mr.zr{opacity:.55}
+.mr.ch .c{animation:pop .7s ease}
+.c.pc{outline:2px solid var(--acc);color:var(--acc)}
+.mr .tag{font-size:.8rem;color:var(--mute)}
+.c.cpv{background:var(--accbg);outline:2px solid var(--acc)}.c.ctg{background:var(--ambbg)}.c.cch{animation:pop .7s ease}
+@keyframes pop{0%{transform:scale(1.3);background:var(--ambbg)}100%{transform:scale(1)}}
+@keyframes drop{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+.calc{margin-top:10px;padding-top:8px;border-top:1px dashed var(--line)}
+.calc .mr{animation:drop .45s ease;border-color:transparent}
+.calc .mr.res{border-top:2px solid var(--ink);border-radius:0 0 8px 8px;background:var(--ambbg)}
+.calc .mr b{width:auto;min-width:30px;white-space:nowrap;color:var(--ink)}
+.calc .lab{width:130px;font-size:.85rem;color:var(--mute);flex:none}
+#desc{font-size:1.05rem;min-height:3.2em;margin:0 0 10px}
+.ctl{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:14px}
+#sl{flex:1;min-width:120px}
+#rank{display:none;margin-top:12px;padding:12px;border-radius:8px;background:var(--grnbg);color:var(--ink);font-size:1.15rem;font-weight:600}
+[hidden]{display:none!important}
+@media (max-width:520px){main{padding:16px 12px 40px}section{padding:12px}.c{width:36px;font-size:.95rem;padding:5px 0}.mr{gap:4px;padding:3px 4px}.mr b{width:26px}#grid{border-spacing:4px}#grid input{width:40px;padding:8px 2px}.calc .mr{flex-wrap:wrap}.calc .lab{width:100%}.ctl button{flex:1}#sl{flex-basis:100%}.mr .tag{display:none}.calc .mr{width:100%}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+<main>
+  <h1>Matrix rank, step by step</h1>
+  <p class="sub">Enter a matrix of whole numbers, then step through the row operations that reduce it and reveal its rank.</p>
+
+  <section id="pick">
+    <h2>Choose a method</h2>
+    <div class="row">
+      <button id="mEch">Row echelon form</button>
+      <button id="mNor">Normal form</button>
+    </div>
+    <p class="sub" style="margin:10px 0 0">Row echelon form uses row operations only. Normal form also uses column operations and ends as [ I 0 ; 0 0 ].</p>
+    <p class="err" id="nojs">The grid can't load here because this viewer is blocking scripts. Open this page in Chrome or Safari instead.</p>
+  </section>
+
+  <section id="entry" hidden>
+    <h2>1. Enter the matrix</h2>
+    <p class="sub" id="mname" style="margin:0 0 10px"></p>
+    <div class="row">
+      <label>Rows<input id="rows" class="dim" type="number" min="1" max="6" value="4"></label>
+      <label>Columns<input id="cols" class="dim" type="number" min="1" max="6" value="3"></label>
+      <button id="make" class="sec">Resize grid</button>
+    </div>
+    <p class="err" id="sizeErr"></p>
+    <div class="scroll"><table id="grid"></table></div>
+    <p class="err" id="valErr"></p>
+    <div class="row"><button id="go">Show the steps</button><button id="chg" class="sec">Change method</button></div>
+  </section>
+
+  <section id="stage" hidden>
+    <h2 id="sh">2. Row operations</h2>
+    <div class="legend">
+      <span><i style="background:var(--acc)"></i>pivot row or column</span>
+      <span><i style="background:var(--amb)"></i>row or column being changed</span>
+      <span><i style="background:var(--grn)"></i>non-zero row (counts toward rank)</span>
+    </div>
+    <p id="desc" aria-live="polite"></p>
+    <div class="scroll"><div id="mat"></div><div id="calc" class="calc" hidden></div></div>
+    <div id="rank"></div>
+    <div class="ctl">
+      <button id="prev" class="sec">Back</button>
+      <button id="play" class="sec">Play</button>
+      <button id="next">Next</button>
+      <button id="rst" class="sec">Restart</button>
+      <input id="sl" type="range" min="0" value="0" aria-label="Jump to step">
+      <span id="cnt"></span>
+    </div>
+  </section>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const f = v => String(parseFloat(v.toFixed(3)));
+const cl = v => Math.abs(v) < 1e-9 ? 0 : v;
+const preset = [[3,2,3],[7,8,9],[7,8,9],[1,2,3]];
+let S = [], idx = 0, timer = null, mode = "ech";
+const gcd = (a, b) => b ? gcd(b, a % b) : Math.abs(a);
+const gv = v => v.reduce(gcd, 0);
+const zn = (K, nr) => nr.every(v => v === 0) ? ` ${K} became all zeros: it was a combination of the other rows, so it adds nothing to the rank.` : "";
+
+function mk(){
+  $("nojs").hidden = true;
+  const r = +$("rows").value, c = +$("cols").value;
+  if(!Number.isInteger(r) || !Number.isInteger(c) || r < 1 || c < 1 || r > 6 || c > 6){
+    $("sizeErr").textContent = "Use whole numbers from 1 to 6 for rows and columns."; return;
+  }
+  $("sizeErr").textContent = ""; $("stage").hidden = true; stop();
+  const t = $("grid"); t.innerHTML = "";
+  for(let i = 0; i < r; i++){
+    const tr = t.insertRow();
+    for(let j = 0; j < c; j++){
+      const inp = document.createElement("input");
+      inp.type = "text"; inp.inputMode = "text";
+      inp.value = "";
+      inp.setAttribute("aria-label", `Row ${i+1}, column ${j+1}`);
+      inp.dataset.i = i; inp.dataset.j = j;
+      inp.onkeydown = e => { if(e.key === "Enter"){ e.preventDefault(); const n = [...t.querySelectorAll("input")]; (n[n.indexOf(inp)+1] || $("go")).focus(); } };
+      tr.insertCell().appendChild(inp);
+    }
+  }
+}
+$("make").onclick = mk;
+
+// Same logic as the Python code: swap, make pivot 1, eliminate below with t.
+// Normal form, following the notebook code: for each diagonal spot d, clear below with row operations,
+// clear the right with column operations, then make the pivot 1. A 0 on the diagonal is fixed by swapping.
+function normalForm(A, push){
+  const x = A.length, y = A[0].length, lim = Math.min(x, y);
+  let r = 0;
+  const clear = (d, m, tr) => {
+    const e = tr ? A[d][m] : A[m][d], pv = A[d][d];
+    if(e === 0) return;
+    const L = tr ? "C" : "R", K = `${L}${m+1}`, P = `${L}${d+1}`, W = tr ? "column" : "row", S0 = tr ? "to the right of" : "under", pp = [d, d];
+    const get = k => tr ? A.map(q => q[k]) : A[k].slice();
+    const set = (k, v) => { if(tr) A.forEach((q, i) => { q[k] = v[i]; }); else A[k] = v; };
+    const hl = post => tr ? {cols: {[d]: "cpv", [m]: post ? "ctg cch" : "ctg"}} : {rows: {[d]: "pv", [m]: post ? "tg ch" : "tg"}};
+    const old = get(m), base = get(d);
+    if(e % pv === 0){
+      const t = e / pv, cp = base.map(v => t * v), nc = old.map((v, i) => v - cp[i]);
+      push({d: `${K} has ${e} ${S0} the pivot ${pv}. Pick t = ${e} ÷ ${pv} = ${t}.`, ...hl(0), piv: pp});
+      push({d: `Multiply every number in the pivot ${W} ${P} by t = ${t}.`, ...hl(0), piv: pp, calc: [{l: K, v: old}, {l: `${t} × ${P}`, v: cp}]});
+      set(m, nc);
+      push({d: `${t < 0 ? "Subtracting a negative is adding" : "Subtract"}: ${K} − (${t} × ${P}). The entry ${S0} the pivot becomes 0.${tr ? "" : zn(K, nc)}`, ...hl(1), piv: pp,
+        calc: [{l: K, v: old}, {l: `${t} × ${P}`, v: cp}, {l: `${K} − ${t}×${P}`, v: nc, res: 1}]});
+    } else {
+      const ck = old.map(v => pv * v), cp = base.map(v => e * v), nc = ck.map((v, i) => v - cp[i]);
+      push({d: `${e} is not a multiple of the pivot ${pv}, so to keep whole numbers: multiply ${K} by ${pv} and the pivot ${W} ${P} by ${e}.`, ...hl(0), piv: pp,
+        calc: [{l: K, v: old}, {l: `${pv} × ${K}`, v: ck}, {l: `${e} × ${P}`, v: cp}]});
+      set(m, nc);
+      push({d: `Subtract: (${pv} × ${K}) − (${e} × ${P}). The entry ${S0} the pivot becomes 0.${tr ? "" : zn(K, nc)}`, ...hl(1), piv: pp,
+        calc: [{l: `${pv} × ${K}`, v: ck}, {l: `${e} × ${P}`, v: cp}, {l: `${pv}×${K} − ${e}×${P}`, v: nc, res: 1}]});
+      const g = gv(get(m));
+      if(g > 1){
+        const b4 = get(m), a2 = b4.map(v => v / g);
+        set(m, a2);
+        push({d: `Every number in ${K} is a multiple of ${g}, so divide ${K} by ${g} to keep the numbers small.`, ...hl(1), piv: pp, calc: [{l: K, v: b4}, {l: `${K} ÷ ${g}`, v: a2, res: 1}]});
+      }
+    }
+  };
+  for(let d = 0; d < lim; d++){
+    if(A[d][d] === 0){
+      let fr = -1, fc = -1;
+      for(let i = d; i < x && fr < 0; i++) if(A[i][d] !== 0){ fr = i; fc = d; }
+      for(let i = d; i < x && fr < 0; i++) for(let c = d; c < y; c++) if(A[i][c] !== 0){ fr = i; fc = c; break; }
+      if(fr < 0){ push({d: `Everything from R${d+1}, C${d+1} onward is 0, so there are no more pivots.`}); break; }
+      if(fr !== d){
+        [A[d], A[fr]] = [A[fr], A[d]];
+        push({d: `The diagonal spot (R${d+1}, C${d+1}) is 0, so swap R${d+1} and R${fr+1} to bring a non-zero number into this row.`, rows: {[d]: "ch tg", [fr]: "ch tg"}});
+      }
+      if(fc !== d){
+        A.forEach(q => { [q[d], q[fc]] = [q[fc], q[d]]; });
+        push({d: `The spot is still 0, so swap C${d+1} and C${fc+1}.`, cols: {[d]: "ctg cch", [fc]: "ctg cch"}});
+      }
+    }
+    for(let m = d + 1; m < x; m++) clear(d, m, false);
+    for(let m = d + 1; m < y; m++) clear(d, m, true);
+    const p = A[d][d];
+    if(p !== 1){
+      const before = A[d].slice();
+      A[d] = before.map(v => v === 0 ? 0 : v / p);
+      push({d: `Make the pivot 1: divide R${d+1} by ${p}.`, rows: {[d]: "pv ch"}, piv: [d, d], calc: [{l: `R${d+1}`, v: before}, {l: `R${d+1} ÷ ${p}`, v: A[d], res: 1}]});
+    }
+    r++;
+  }
+  const rows = {};
+  A.forEach((_, i) => { rows[i] = i < r ? "nz" : "zr"; });
+  push({d: r ? `Done. The matrix is now [ I${r} 0 ; 0 0 ], the normal form.` : "All entries are 0, so the matrix is already in normal form.", rows, rank: r, last: 1,
+    msg: r ? `Normal form = [ I${r} 0 ; 0 0 ], so the rank is ${r}` : "Rank of the matrix = 0"});
+}
+
+function build(a, normal){
+  const A = a.map(r => r.slice()), x = A.length, y = A[0].length, S = [];
+  const push = o => S.push({m: A.map(r => r.slice()), ...o});
+  push({d: normal ? "This is your matrix. For each diagonal spot (R1,C1), (R2,C2), … we put zeros under the pivot with row operations, put zeros to its right with column operations, then divide to make the pivot 1. A 0 on the diagonal is fixed by swapping rows or columns. The result [ I 0 ; 0 0 ] is the normal form, and the size of I is the rank." : "This is your matrix. We will turn it into row echelon form (zeros below each pivot). The number of non-zero rows left is the rank."});
+  if(normal){ normalForm(A, push); return S; }
+  let row = 0;
+  for(let j = 0; j < y && row < x; j++){
+    let p = -1;
+    for(let i = row; i < x; i++) if(Math.abs(A[i][j]) > 1e-9){ p = i; break; }
+    if(p < 0){ push({d: `Column ${j+1} has only zeros from R${row+1} down, so it has no pivot. Move to the next column.`}); continue; }
+    if(p !== row){
+      [A[row], A[p]] = [A[p], A[row]];
+      push({d: `The pivot spot (R${row+1}, column ${j+1}) was 0, so swap R${row+1} and R${p+1}.`, rows: {[row]: "ch tg", [p]: "ch tg"}, piv: [row, j]});
+    }
+    const pv = A[row][j];
+    for(let k = row + 1; k < x; k++){
+      const e = A[k][j];
+      if(e === 0) continue;
+      if(e % pv !== 0){
+        const old = A[k].slice(), K = `R${k+1}`, P = `R${row+1}`, rows = {[row]: "pv", [k]: "tg"};
+        const rk = old.map(v => pv * v), rp = A[row].map(v => e * v), nr = rk.map((v, c) => v - rp[c]);
+        push({d: `${e} is not a multiple of the pivot ${pv}, so to keep whole numbers: multiply ${K} by ${pv} and the pivot row ${P} by ${e}.`, rows, piv: [row, j],
+          calc: [{l: K, v: old}, {l: `${pv} × ${K}`, v: rk}, {l: `${e} × ${P}`, v: rp}]});
+        A[k] = nr;
+        push({d: `Subtract: (${pv} × ${K}) − (${e} × ${P}). The entry under the pivot becomes 0.${zn(K, nr)}`, rows: {[row]: "pv", [k]: "tg ch"}, piv: [row, j],
+          calc: [{l: `${pv} × ${K}`, v: rk}, {l: `${e} × ${P}`, v: rp}, {l: `${pv}×${K} − ${e}×${P}`, v: nr, res: 1}]});
+        const g = gv(A[k]);
+        if(g > 1){
+          const b4 = A[k].slice();
+          A[k] = b4.map(v => v / g);
+          push({d: `Every number in ${K} is a multiple of ${g}, so divide ${K} by ${g} to keep the numbers small.`, rows: {[row]: "pv", [k]: "tg ch"}, piv: [row, j],
+            calc: [{l: K, v: b4}, {l: `${K} ÷ ${g}`, v: A[k], res: 1}]});
+        }
+        continue;
+      }
+      const t = e / pv, old = A[k].slice();
+      const rp = A[row].map(v => t * v), nr = old.map((v, c) => v - rp[c]);
+      const K = `R${k+1}`, P = `R${row+1}`, rows = {[row]: "pv", [k]: "tg"};
+      push({d: `Row ${K} has ${f(old[j])} under the pivot. Pick t = ${f(old[j])} ÷ ${f(A[row][j])} = ${f(t)}, the number that cancels it.`, rows, piv: [row, j]});
+      push({d: `Multiply every number in the pivot row ${P} by t = ${f(t)}.`, rows, piv: [row, j],
+        calc: [{l: K, v: old}, {l: `${f(t)} × ${P}`, v: rp}]});
+      A[k] = nr;
+      push({d: `${t < 0 ? "Subtracting a negative is adding" : "Subtract"}: ${K} − (${f(t)} × ${P}). The entry under the pivot becomes 0.${zn(K, nr)}`,
+        rows: {[row]: "pv", [k]: "tg ch"}, piv: [row, j],
+        calc: [{l: K, v: old}, {l: `${f(t)} × ${P}`, v: rp}, {l: `${K} − ${f(t)}×${P}`, v: nr, res: 1}]});
+    }
+    row++;
+  }
+  const zr = A.map(r => r.every(v => Math.abs(v) < 1e-9));
+  const rank = zr.filter(z => !z).length, rows = {};
+  zr.forEach((z, i) => rows[i] = z ? "zr" : "nz");
+  push({d: `Done. ${x - rank === 0 ? "No row is all zeros" : `${x - rank} row${x - rank > 1 ? "s are" : " is"} all zeros`} and ${rank} row${rank > 1 ? "s are" : " is"} non-zero.`, rows, rank, last: 1});
+  return S;
+}
+
+const rowHTML = (lab, v, cls, piv, ri, tag, cols) =>
+  `<div class="mr ${cls || ""}"><b>${lab}</b>${v.map((n, c) => `<span class="c ${piv && piv[0] === ri && piv[1] === c ? "pc" : ""} ${(cols || {})[c] || ""}">${f(n)}</span>`).join("")}${tag ? `<span class="tag">${tag}</span>` : ""}</div>`;
+
+function show(){
+  const s = S[idx];
+  $("desc").textContent = s.d;
+  $("mat").innerHTML = s.m.map((r, i) => rowHTML(`R${i+1}`, r, (s.rows || {})[i], s.piv, i, (s.rows || {})[i] === "zr" ? "zero row" : "", s.cols)).join("");
+  const c = $("calc");
+  c.hidden = !s.calc;
+  c.innerHTML = s.calc ? s.calc.map(r => `<div class="mr ${r.res ? "res" : ""}"><span class="lab">${r.l}</span>${r.v.map(n => `<span class="c">${f(n)}</span>`).join("")}</div>`).join("") : "";
+  const rk = $("rank");
+  rk.style.display = s.last ? "block" : "none";
+  if(s.last) rk.textContent = s.msg || `Rank of the matrix = ${s.rank}`;
+  $("prev").disabled = idx === 0; $("next").disabled = idx === S.length - 1;
+  $("sl").max = S.length - 1; $("sl").value = idx;
+  $("cnt").textContent = `Step ${idx + 1} of ${S.length}`;
+  if(idx === S.length - 1) stop();
+}
+function go(n){ idx = Math.max(0, Math.min(S.length - 1, n)); show(); }
+function stop(){ clearInterval(timer); timer = null; $("play").textContent = "Play"; }
+$("play").onclick = () => {
+  if(timer) return stop();
+  if(idx === S.length - 1) idx = 0;
+  $("play").textContent = "Pause"; show();
+  timer = setInterval(() => go(idx + 1), 2000);
+};
+$("next").onclick = () => { stop(); go(idx + 1); };
+$("prev").onclick = () => { stop(); go(idx - 1); };
+$("rst").onclick = () => { stop(); go(0); };
+$("sl").oninput = e => { stop(); go(+e.target.value); };
+document.addEventListener("keydown", e => {
+  if(e.target.tagName === "INPUT" || $("stage").hidden) return;
+  if(e.key === "ArrowRight") $("next").click();
+  if(e.key === "ArrowLeft") $("prev").click();
+});
+
+$("go").onclick = () => {
+  const inputs = [...$("grid").querySelectorAll("input")], a = [];
+  let bad = 0;
+  inputs.forEach(inp => {
+    inp.classList.remove("bad");
+    const v = inp.value.trim(), n = Number(v);
+    if(v === "" || !Number.isInteger(n)){ inp.classList.add("bad"); bad++; }
+    (a[+inp.dataset.i] = a[+inp.dataset.i] || [])[+inp.dataset.j] = n;
+  });
+  if(bad){ $("valErr").textContent = `${bad} cell${bad > 1 ? "s are" : " is"} empty or not a whole number.`; $("stage").hidden = true; return; }
+  $("valErr").textContent = "";
+  stop(); S = build(a, mode === "nor");
+  if(S.some(z => z.m.flat().some(v => !Number.isSafeInteger(v)) || (z.calc || []).some(c => c.v.some(v => !Number.isSafeInteger(v))))){
+    $("valErr").textContent = "The numbers get too big to stay exact. Please use smaller numbers.";
+    $("stage").hidden = true; return;
+  } $("sh").textContent = mode === "nor" ? "2. Row and column operations" : "2. Row operations"; $("stage").hidden = false; go(0);
+  $("stage").scrollIntoView({behavior: "smooth", block: "start"});
+};
+function pick(m){
+  mode = m; stop();
+  $("pick").hidden = true; $("entry").hidden = false; $("stage").hidden = true;
+  $("mname").textContent = m === "nor" ? "Method: Normal form (row and column operations)" : "Method: Row echelon form (row operations)";
+}
+$("mEch").onclick = () => pick("ech");
+$("mNor").onclick = () => pick("nor");
+$("chg").onclick = () => { stop(); $("entry").hidden = true; $("stage").hidden = true; $("pick").hidden = false; };
+mk();
+</script>
+</body>
+</html>
